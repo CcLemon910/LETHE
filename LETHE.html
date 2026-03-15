@@ -77,16 +77,17 @@ body {
 
 /* ── 正面：照片 ── */
 .card-front {
-  background: #111;
-  box-shadow:
-    0 8px 40px rgba(0,0,0,0.6),           /* 卡片陰影，讓卡片有浮起感 */
-    0 0 0 1px rgba(255,255,255,0.06);      /* 卡片邊框，0.06 = 很淡的白邊，改 0 沒有邊框 */
+  background: #fff;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
+  display: flex;
+  flex-direction: column;
+  padding: 8px 8px 28px 8px;  /* 上左右 8px，底部 28px 留白 */
 }
 
 .card-front img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;      /* cover = 照片裁切填滿；contain = 照片完整顯示但可能有黑邊 */
+  flex: 1;
+  object-fit: cover;
   display: block;
 }
 
@@ -297,7 +298,7 @@ function createCard(p, index, animate) {
   wrap.style.height = CARD_H + 'px';
   wrap.style.left   = x + 'px';
   wrap.style.top    = y + 'px';
-  wrap.style.zIndex = Math.floor(Math.random() * 10) + 1;  // 隨機層疊順序，讓卡片看起來有前後感
+  wrap.style.zIndex = animate ? 999 : Math.floor(Math.random() * 10) + 1;
 
   // 初始旋轉角度：-5 ~ +5 度（隨機略微傾斜）
   // 改成 *20 角度範圍 -10 ~ +10；改成 *0 全部直立
