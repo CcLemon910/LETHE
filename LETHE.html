@@ -335,12 +335,8 @@ function tickDissolve(id, s) {
     knownIds.delete(id);
     postStates.delete(id);
     const el = s.el;
-    el.style.transition = 'height 0.6s ease, opacity 0.4s ease, margin 0.6s ease, gap 0.6s ease';
+   // 只讓照片和文字消失，不移除元素，保留空白
     el.style.opacity = '0';
-    el.style.height  = '0';
-    el.style.overflow = 'hidden';
-    el.style.margin  = '0';
-    setTimeout(() => { if (el.parentNode) el.remove(); updateEmpty(); }, 700);
   }
 }
 
