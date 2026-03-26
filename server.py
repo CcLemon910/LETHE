@@ -58,6 +58,31 @@ def get_photos():
 def index():
     return send_from_directory(".", "LETHE.html")
 
+@app.route("/api/like/<photo_id>", methods=["POST"])
+def like(photo_id):
+    photos = load()
+    for p in photos:
+        if p.get("id") == photo_id:
+            p["likes"] = p.get("likes", 0) + 1
+            save(photos)
+            return jsonify({"likes": p["likes"]})
+    return jsonify({"error": "not found"}), 404
+
+@app.route("/api/comment/<photo_id>", methods=["POST"])
+def comment(photo_id):
+    text = request.json.get("text", "").strip()
+    if not text:
+        return jsonify({"error": "empty"}), 400
+    photos = load()
+    for p in photos:
+        if p.get("id") == photo_id:
+            if "comments" not in p:
+                p["comments"] = []
+            p["comments"].append(text)
+            save(photos)
+            return jsonify({"comments": p["comments"]})
+    return jsonify({"error": "not found"}), 404
+    
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))
