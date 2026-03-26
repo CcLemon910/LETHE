@@ -105,6 +105,69 @@ html, body {
 }
 .post-dot.triggered { background: rgba(255,255,255,0.20); }
 
+.post-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.btn-like, .btn-comment-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--fg-dim);
+  letter-spacing: 0.1em;
+  padding: 0;
+  transition: color 0.2s;
+}
+.btn-like:hover, .btn-comment-toggle:hover { color: var(--fg); }
+.btn-like.liked { color: rgba(255,255,255,0.7); }
+
+.post-comments {
+  margin-top: 10px;
+  display: none;
+}
+.post-comments.open { display: block; }
+
+.comment-item {
+  font-size: 11px;
+  color: var(--fg-dim);
+  line-height: 1.6;
+  padding: 2px 0;
+}
+
+.comment-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.comment-input {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  color: var(--fg);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 0;
+  outline: none;
+}
+.comment-input::placeholder { color: var(--fg-faint); }
+
+.btn-send {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  color: var(--fg-dim);
+  letter-spacing: 0.1em;
+  padding: 0;
+}
+.btn-send:hover { color: var(--fg); }
+  
 /* ── 邊緣淡出 ── */
 #fade-top, #fade-bottom {
   position: fixed; left: 0; right: 0; height: 110px;
@@ -274,6 +337,77 @@ function createPost(p) {
   dot.className = 'post-dot' + (type === 'triggered' ? ' triggered' : '');
   meta.appendChild(dot);
   body.appendChild(meta);
+  // 按讚和留言
+  const actions = document.createElement('div');
+  actions.className = 'post-actions';
+
+  const btnLike = document.createElement('button');
+  btnLike.className = 'btn-like';
+  btnLike.textContent = `♡  ${p.likes || 0}`;
+  btnLike.addEventListener('click', async () => {
+    const res = await fetch(`/api/like/${id}`, { method: 'POST' });
+    const data = await res.json();
+    btnLike.textContent = `♥  ${data.likes}`;
+    btnLike.classList.add('liked');
+  });
+
+  const btnComment = document.createElement('button');
+  btnComment.className = 'btn-comment-toggle';
+  btnComment.textContent = '留言';
+
+  actions.appendChild(btnLike);
+  actions.appendChild(btnComment);
+  body.appendChild(actions);
+
+  // 留言區
+  const comments = document.createElement('div');
+  comments.className = 'post-comments';
+
+  // 顯示已有留言
+  (p.comments || []).forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'comment-item';
+    item.textContent = c;
+    comments.appendChild(item);
+  });
+
+  const inputRow = document.createElement('div');
+  inputRow.className = 'comment-input-row';
+  const input = document.createElement('input');
+  input.className = 'comment-input';
+  input.placeholder = '說點什麼...';
+  input.maxLength = 80;
+  const btnSend = document.createElement('button');
+  btnSend.className = 'btn-send';
+  btnSend.textContent = '送出';
+
+  async function sendComment() {
+    const text = input.value.trim();
+    if (!text) return;
+    const res = await fetch(`/api/comment/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await res.json();
+    input.value = '';
+    const item = document.createElement('div');
+    item.className = 'comment-item';
+    item.textContent = text;
+    comments.insertBefore(item, inputRow);
+  }
+
+  btnSend.addEventListener('click', sendComment);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') sendComment(); });
+  inputRow.appendChild(input);
+  inputRow.appendChild(btnSend);
+  comments.appendChild(inputRow);
+  body.appendChild(comments);
+
+  btnComment.addEventListener('click', () => {
+    comments.classList.toggle('open');
+    btnComment.textContent = comments.classList.contains('open') ? '收起' : '留言';
+  });
   div.appendChild(body);
 
   // 記錄狀態
