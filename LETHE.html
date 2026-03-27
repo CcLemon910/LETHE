@@ -411,10 +411,15 @@ function createPost(p) {
   div.appendChild(body);
 
   // 記錄狀態
+  // 計算這張是第幾張 auto 照片，依序錯開消散時間
+  const autoIndex = Array.from(postStates.values()).filter(s => s.type === 'auto').length;
+  const dissolveDelay = type === 'auto' ? autoIndex * 3000 : Infinity; // 每張錯開 3 秒
+
   postStates.set(id, {
     el: div, addedAt: Date.now(), type,
     canvas: dissolveCanvas,
     tiles: null, done: false,
+    dissolveDelay,
   });
 
   return div;
@@ -438,9 +443,11 @@ function tickDissolve(id, s) {
   if (s.type !== 'auto' || s.done || !s.canvas) return;
 
   const elapsed = Date.now() - s.addedAt;
-  if (elapsed < DISSOLVE_START_MS) return;
+  const startAfter = DISSOLVE_START_MS + (s.dissolveDelay || 0);
+  if (elapsed < startAfter) return;
 
-  const progress = Math.min(1, (elapsed - DISSOLVE_START_MS) / DISSOLVE_FULL_MS);
+  const progress = Math.min(1, (elapsed - startAfter) / DISSOLVE_FULL_MS);
+
   const ctx  = s.canvas.getContext('2d');
   const cols = Math.ceil(PHOTO_W / TILE);
   const rows = Math.ceil(PHOTO_H / TILE);
