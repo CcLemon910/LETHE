@@ -508,7 +508,7 @@ function tick() {
 // ══════════════════════════════════════
 async function poll() {
   try {
-    const data = await fetch('/api/photos').then(r => r.json());
+    const data = await fetch('/api/photos?' + Date.now()).then(r => r.json());
     data.forEach(p => addPost(p));
   } catch(e) {}
 }
@@ -519,7 +519,7 @@ async function poll() {
 (async () => {
   updateEmpty();
   try {
-    const data = await fetch('/api/photos').then(r => r.json());
+    const data = await fetch('/api/photos?' + Date.now()).then(r => r.json());
     data.forEach(p => addPost(p));
   } catch(e) {}
   requestAnimationFrame(tick);
