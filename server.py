@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)
 
 DATA_FILE  = "photos.json"
-MAX_PHOTOS = 10
+MAX_PHOTOS = 500
 
 def load():
     if not os.path.exists(DATA_FILE):
