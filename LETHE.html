@@ -317,7 +317,7 @@ function createPost(p) {
 
   const cap = document.createElement('div');
   cap.className = 'post-caption';
-  cap.textContent = p.caption || pickCaption();
+  cap.textContent = type === 'triggered' ? (p.caption || pickCaption()) : '';
   body.appendChild(cap);
 
   const meta = document.createElement('div');
@@ -441,39 +441,71 @@ function tickDissolve(id, s) {
 
   const progress = Math.min(1, (elapsed - startAfter) / DISSOLVE_FULL_MS);
 
-  const ctx  = s.canvas.getContext('2d');
-  const cols = Math.ceil(PHOTO_W / TILE);
-  const rows = Math.ceil(PHOTO_H / TILE);
-  const total = cols * rows;
+  // 初始化 Voronoi（只做一次）
+  if (!s.voronoi) {
+    const N = 18;
+    const pts = Array.from({ length: N }, () => [
+      Math.random() * PHOTO_W,
+      Math.random() * PHOTO_H
+    ]);
 
-  // 初始化碎片順序（第一次才做，隨機排列）
-  if (!s.tiles) {
-    s.tiles = Array.from({ length: total }, (_, i) => i);
-    for (let i = s.tiles.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [s.tiles[i], s.tiles[j]] = [s.tiles[j], s.tiles[i]];
+    // 計算每個 pixel 屬於哪個區域
+    const regionMap = new Int32Array(PHOTO_W * PHOTO_H);
+    for (let y = 0; y < PHOTO_H; y++) {
+      for (let x = 0; x < PHOTO_W; x++) {
+        let best = 0, minD = Infinity;
+        for (let i = 0; i < N; i++) {
+          const dx = x - pts[i][0], dy = y - pts[i][1];
+          const d = dx*dx + dy*dy;
+          if (d < minD) { minD = d; best = i; }
+        }
+        regionMap[y * PHOTO_W + x] = best;
+      }
     }
+
+    // 隨機決定消失順序，但最後 1-3 個區域保留
+    const keepCount = 1 + Math.floor(Math.random() * 3); // 保留 1~3 塊
+    const order = Array.from({ length: N }, (_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    const keepRegions = new Set(order.slice(N - keepCount));
+
+    s.voronoi = { regionMap, order, keepRegions, N };
   }
 
+  const { regionMap, order, keepRegions, N } = s.voronoi;
+  const ctx = s.canvas.getContext('2d');
   ctx.clearRect(0, 0, PHOTO_W, PHOTO_H);
   ctx.fillStyle = '#060606';
-  const hide = Math.floor(progress * total);
-  for (let i = 0; i < hide; i++) {
-    const idx = s.tiles[i];
-    ctx.fillRect((idx % cols) * TILE, Math.floor(idx / cols) * TILE, TILE, TILE);
+
+  // 要消失的區域數量（不含保留的）
+  const dissolveCount = N - keepRegions.size;
+  const hideCount = Math.floor(progress * dissolveCount);
+  const hiddenRegions = new Set(order.slice(0, hideCount));
+
+  // 正在消融的那一個區域（漸變效果）
+  const partialIdx = hideCount < dissolveCount ? order[hideCount] : -1;
+  const partialProgress = (progress * dissolveCount) % 1;
+
+  for (let y = 0; y < PHOTO_H; y++) {
+    for (let x = 0; x < PHOTO_W; x++) {
+      const region = regionMap[y * PHOTO_W + x];
+      if (keepRegions.has(region)) continue; // 保留的碎片不消失
+      if (hiddenRegions.has(region)) {
+        ctx.fillRect(x, y, 1, 1);
+      } else if (region === partialIdx && Math.random() < partialProgress) {
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
   }
 
   if (progress >= 1) {
     s.done = true;
-    dissolved.add(id);
-    knownIds.delete(id);
-    postStates.delete(id);
-    const el = s.el;
-   // 只讓照片和文字消失，不移除元素，保留空白
-    el.style.opacity = '0';
+    // 不完全隱藏，保留最後幾塊碎片
   }
 }
-
 // ══════════════════════════════════════
 // 主動畫迴圈
 // ══════════════════════════════════════
