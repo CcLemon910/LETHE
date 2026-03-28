@@ -16,15 +16,10 @@ def load():
         return json.load(f)
 
 def save(photos):
-    # 存之前先確認總大小不超過 2MB
-    import sys
-    data = json.dumps(photos, ensure_ascii=False, indent=2)
-    if sys.getsizeof(data) > 2 * 1024 * 1024:
-        # 如果超過就刪掉最舊的直到夠小
-        while sys.getsizeof(json.dumps(photos, ensure_ascii=False)) > 2 * 1024 * 1024:
-            photos.pop()
+    while len(photos) > MAX_PHOTOS:
+        photos.pop()
     with open(DATA_FILE, "w", encoding="utf-8") as f:
-        f.write(data)
+        json.dump(photos, f, ensure_ascii=False, indent=2)
 
 @app.route("/api/upload", methods=["POST"])
 def upload():
