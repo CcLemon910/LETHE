@@ -25,6 +25,9 @@ def save(photos):
 def upload():
     if "photo" not in request.files:
         return jsonify({"error": "no photo"}), 400
+@app.route("/<path:filename>")
+def static_files(filename):
+    return send_from_directory(".", filename)
 
     file   = request.files["photo"]
     ts     = request.form.get("time", datetime.now().strftime("%Y-%m-%d %H:%M"))
