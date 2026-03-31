@@ -195,6 +195,18 @@ html, body {
   font-size: 9px; color: rgba(255,255,255,0.05);
   letter-spacing: 0.25em; text-transform: uppercase;
 }
+
+#qr {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  opacity: 0.5;
+  z-index: 10;
+  pointer-events: none;
+}
 </style>
 </head>
 <body>
@@ -203,6 +215,7 @@ html, body {
 <div id="fade-bottom"></div>
 <div id="viewport"><div id="track"></div></div>
 <div id="brand">LETHE</div>
+<img id="qr" src="QR.jpg" alt="QR">
 <div id="empty">
   <div class="e-title">nothing recorded</div>
   <div class="e-sub">waiting</div>
