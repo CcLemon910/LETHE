@@ -25,32 +25,16 @@ def save(photos):
 def upload():
     if "photo" not in request.files:
         return jsonify({"error": "no photo"}), 400
-@app.route("/<path:filename>")
-def static_files(filename):
-    return send_from_directory(".", filename)
-
-    file   = request.files["photo"]
-    ts     = request.form.get("time", datetime.now().strftime("%Y-%m-%d %H:%M"))
-    ptype  = request.form.get("type", "triggered")   # "auto" 或 "triggered"
-
+    file  = request.files["photo"]
+    ts    = request.form.get("time", datetime.now().strftime("%Y-%m-%d %H:%M"))
+    ptype = request.form.get("type", "triggered")
     img_data = base64.b64encode(file.read()).decode("utf-8")
     img_src  = f"data:image/jpeg;base64,{img_data}"
-
-    entry = {
-        "id":      str(uuid.uuid4()),
-        "src":     img_src,
-        "time":    ts,
-        "type":    ptype,
-        "caption": "",
-    }
-
+    entry = {"id": str(uuid.uuid4()), "src": img_src, "time": ts, "type": ptype, "caption": ""}
     photos = load()
     photos.insert(0, entry)
-
-    # 超過上限就刪最舊的
     if len(photos) > MAX_PHOTOS:
         photos = photos[:MAX_PHOTOS]
-
     save(photos)
     print(f"[上傳] type={ptype} @ {ts}")
     return jsonify({"ok": True, "entry": entry})
@@ -58,10 +42,6 @@ def static_files(filename):
 @app.route("/api/photos")
 def get_photos():
     return jsonify(load())
-
-@app.route("/")
-def index():
-    return send_from_directory(".", "LETHE.html")
 
 @app.route("/api/like/<photo_id>", methods=["POST"])
 def like(photo_id):
@@ -87,8 +67,15 @@ def comment(photo_id):
             save(photos)
             return jsonify({"comments": p["comments"]})
     return jsonify({"error": "not found"}), 404
-    
+
+@app.route("/")
+def index():
+    return send_from_directory(".", "LETHE.html")
+
+@app.route("/<path:filename>")
+def static_files(filename):
+    return send_from_directory(".", filename)
+
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
